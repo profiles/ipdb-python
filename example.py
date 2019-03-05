@@ -70,8 +70,13 @@ def test_idc_list():
     print(db.find_map("1.1.1.1", "CN"))
     print(db.find_map("8.8.8.8", "CN"))
 
-test_city_ipv4()
-test_city_ipv6()
-test_base_station()
-test_district()
+def test_dump():
+    db = ipdb.Reader("c:/work/ipdb/idc_list.ipdb")
+    db.dump(print)
+
 # test_city_ipv4()
+# test_city_ipv6()
+# test_base_station()
+test_dump()
+# test_city_ipv4()
+# test_export()

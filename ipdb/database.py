@@ -141,6 +141,46 @@ class Reader:
             m[value] = loc[idx]
         return m
 
+    def dump(self, callback):
+        node = 0
+        if self._v4offset == 0:
+            i = 0
+            while i < 96:
+                if i >= 80:
+                    node = self._read_node(node, 1)
+                else:
+                    node = self._read_node(node, 0)
+                i += 1
+            self._v4offset = node
+        else:
+            node = self._v4offset
+
+        self._tree_traversal(node, 0, 0, callback)
+
+    def _tree_traversal(self, node, depth, subnet, callback):
+        if node > self._meta.node_count:
+            off = self._meta.languages.get("CN")
+            bs = self._resolve(node)
+            if bs is None:
+                raise DatabaseError("database resolve error")
+
+            tmp = bs.decode("utf-8").split("\t")
+            end = off + len(self._meta.fields)
+            if len(tmp) < end:
+                raise DatabaseError("database is error")
+
+            loc = tmp[off:off+len(self._meta.fields)]
+            m = {}
+            for idx, value in enumerate(self._meta.fields):
+                m[value] = loc[idx]
+            callback(subnet << (32 - depth), m)
+            return
+        elif node == self._meta.node_count:
+            raise DatabaseError("database node exceeded")
+        depth += 1
+        subnet = subnet << 1
+        self._tree_traversal(self._read_node(node, 0), depth, subnet, callback)
+        self._tree_traversal(self._read_node(node, 1), depth, subnet + 1, callback)
 
     def get_meta_data(self):
         return self._meta
